@@ -59,3 +59,13 @@ creat a flask app that display the sensors, the geometry and the ML models resul
 Deploy it  (locally for now: local website)
 Run a python code that saves a screenshot of that website periodically
 Using XAMPP creat an apache secure web server and run a HTML file on that server that calls the AR.js libraray and display the frames of the website on a board when the camera detcts a specific image/pattern
+
+# How to use it
+install vs-code : https://code.visualstudio.com/
+install python : https://www.python.org/downloads/   make sure to select "add to path"
+install git : https://git-scm.com/downloads/win
+creat a folder and open it in vscode, then open a bash terminal and run : git clone https://github.com/bensidhom/Novel-Cyber-Infrastructure-Enabling-AI-Driven-Analytics-and-Digital-Twins-for-Real-Time-3D-Printing.git
+then run  : cd Novel-Cyber-Infrastructure-Enabling-AI-Driven-Analytics-and-Digital-Twins-for-Real-Time-3D-Printing/
+creat a virtual envirement: python -m venv venv (powrshell)
+activate: venv\Scripts\activate.bat (cmd)
+
