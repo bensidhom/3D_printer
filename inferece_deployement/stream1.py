@@ -7,29 +7,33 @@ from octorest import OctoRest
 import threading
 import logging
 from logging.handlers import RotatingFileHandler
-from PIL import Image
+from PIL import Image, ImageFile
 import numpy as np
 import json
+from pathlib import Path
+import io
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 # Configuration
-UPLOAD_FOLDER = r'C:\Users\djeri\OneDrive\Desktop\3dprinter_flask\uploads'
+UPLOAD_FOLDER = r'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-CONFIG_PATH = r"C:\Users\djeri\OneDrive\Desktop\3dprinter_flask\test1\session_config.json"
+CONFIG_PATH = r"inferece_deployement\session_config.json"
 
 def get_saved_ip():
     if os.path.exists(CONFIG_PATH):
         with open(CONFIG_PATH) as f:
-            return json.load(f).get("ip", "192.168.1.20")
-    return "192.168.1.20"
+            return json.load(f).get("ip", "150.250.211.169")
+    return "150.250.211.169"
 
 OCTO_URL = f"http://{get_saved_ip()}"
 API_KEY = "0B280554DA16426CB85536D88A82B672"
 PLOT_PATHS = [
-    r"C:\Users\djeri\OneDrive\Desktop\3dprinter_flask\Database\static\plot1.png",
-    r"C:\Users\djeri\OneDrive\Desktop\3dprinter_flask\Database\static\plot2.png",
-    r"C:\Users\djeri\OneDrive\Desktop\3dprinter_flask\Database\static\plot3.png",
-    r"C:\Users\djeri\OneDrive\Desktop\3dprinter_flask\Database\static\plot4.png"
+    r"database\static\plot1.png",
+    r"database\static\plot2.png",
+    r"database\static\plot3.png",
+    r"database\static\plot4.png"
 ]
 
 # Setup logging
@@ -64,10 +68,10 @@ except Exception as e:
 
 # Background scripts
 scripts = [
-    r"C:\Users\djeri\OneDrive\Desktop\3dprinter_flask\test1\all_ae.py",
-    r"C:\Users\djeri\OneDrive\Desktop\3dprinter_flask\test1\all_cv.py",
-    r"C:\Users\djeri\OneDrive\Desktop\3dprinter_flask\test1\features.py",
-    r"C:\Users\djeri\OneDrive\Desktop\3dprinter_flask\test1\gcode_server_godot.py"
+    r"inferece_deployement\all_ae.py",
+    r"inferece_deployement\all_cv.py",
+    r"inferece_deployement\features.py",
+    r"inferece_deployement\gcode_server_godot.py"
 ]
 
 def run_script(script_path):
@@ -76,18 +80,20 @@ def run_script(script_path):
 def start_scripts():
     for script in scripts:
         thread = threading.Thread(target=run_script, args=(script,))
+        thread.daemon = True
         thread.start()
 
-# Start background scripts
-threading.Thread(target=start_scripts, daemon=True).start()
+# Start background scripts once
+if 'scripts_started' not in st.session_state:
+    st.session_state.scripts_started = True
+    threading.Thread(target=start_scripts, daemon=True).start()
 
-# OctoPrint functions
+# OctoPrint helpers
 def send_octoprint_command(command, action=None):
     try:
         payload = {"command": command}
         if action:
             payload["action"] = action
-
         response = requests.post(
             f"http://{get_saved_ip()}/api/job",
             headers={"Content-Type": "application/json", "X-Api-Key": API_KEY},
@@ -121,16 +127,35 @@ def get_octoprint_files():
         logger.error("Error retrieving OctoPrint files:", exc_info=e)
     return []
 
-def load_plot_image(index):
-    try:
-        if os.path.exists(PLOT_PATHS[index]):
-            return Image.open(PLOT_PATHS[index])
-        return Image.fromarray(np.zeros((300, 400, 3), dtype=np.uint8))
-    except Exception as e:
-        logger.error(f"Error loading plot {index+1}:", exc_info=e)
-        return Image.fromarray(np.zeros((300, 400, 3), dtype=np.uint8))
+def load_plot_image(index: int, attempts: int = 6, delay: float = 0.2):
+    """
+    Robustly load plot images every time we render:
+      - check .stamp written by the backend saver,
+      - read full bytes into memory then open via PIL,
+      - retry a few times if the writer is mid-atomic-replace.
+    Returns (PIL.Image, last_updated_text)
+    """
+    p = Path(PLOT_PATHS[index])
+    stamp = p.with_suffix(p.suffix + ".stamp")
 
-# Status display
+    last_updated = "never"
+    for _ in range(attempts):
+        try:
+            if p.exists():
+                # Prefer stamp time; fallback to file mtime
+                if stamp.exists():
+                    last_updated = stamp.read_text(encoding="utf-8").strip()
+                else:
+                    last_updated = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(p.stat().st_mtime))
+                data = p.read_bytes()
+                img = Image.open(io.BytesIO(data))
+                return img.copy(), last_updated
+        except Exception:
+            time.sleep(delay)
+
+    img = Image.fromarray(np.zeros((300, 400, 3), dtype=np.uint8))
+    return img, last_updated
+
 # Status display
 status_col1, status_col2, status_col3 = st.columns(3)
 job_status = get_job_status() or {}
@@ -145,7 +170,7 @@ status_col1.metric("Status", status)
 status_col2.metric("Progress", f"{completion:.1f}%")
 status_col3.metric("Current File", current_file)
 
-# File upload section
+# File upload
 with st.expander("Upload G-code to OctoPrint"):
     uploaded_file = st.file_uploader("Choose a G-code file", type="gcode")
     if uploaded_file and st.button("Upload File"):
@@ -163,7 +188,7 @@ with st.expander("Upload G-code to OctoPrint"):
             logger.error("Upload error:", exc_info=e)
             st.error(f"Upload failed: {str(e)}")
 
-# Print control section
+# Print controls
 with st.expander("Print Controls"):
     octoprint_files = get_octoprint_files()
     selected_file = st.selectbox("Select a file to print", [""] + octoprint_files)
@@ -174,21 +199,14 @@ with st.expander("Print Controls"):
     if col1.button("🚀 Start Print"):
         if selected_file:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            job_folder = os.path.join(r"C:\Users\djeri\OneDrive\Desktop\3dprinter_flask\Database\dynamic", f"{job_name}_{timestamp}")
+            job_folder = os.path.join(r"database\dynamic", f"{job_name}_{timestamp}")
             os.makedirs(job_folder, exist_ok=True)
-
-            config = {
-                "ip": ip_input,
-                "job_name": job_name,
-                "timestamp": timestamp,
-                "job_folder": job_folder
-            }
+            config = {"ip": ip_input, "job_name": job_name, "timestamp": timestamp, "job_folder": job_folder}
             with open(CONFIG_PATH, "w") as f:
                 json.dump(config, f)
-
             try:
                 if client:
-                    client.select( selected_file)
+                    client.select(selected_file)
                     time.sleep(1)
                     if get_job_status().get("state") == "Operational":
                         if send_octoprint_command("start"):
@@ -204,37 +222,40 @@ with st.expander("Print Controls"):
             st.warning("Please select a file to print")
 
     if col2.button("⏸️ Pause"):
-        if send_octoprint_command("pause", action="pause"):
-            st.success("Print paused")
-        else:
-            st.error("Failed to pause print")
+        st.success("Print paused" if send_octoprint_command("pause", action="pause") else "Failed to pause print")
 
     if col3.button("▶️ Resume"):
-        if send_octoprint_command("pause", action="resume"):
-            st.success("Print resumed")
-        else:
-            st.error("Failed to resume print")
+        st.success("Print resumed" if send_octoprint_command("pause", action="resume") else "Failed to resume print")
 
     if col4.button("⛔ Cancel", type="primary"):
-        if send_octoprint_command("cancel"):
-            st.success("Print cancelled")
-        else:
-            st.error("Failed to cancel print")
+        st.success("Print cancelled" if send_octoprint_command("cancel") else "Failed to cancel print")
 
 # Monitoring plots
 st.header("Monitoring Plots")
 plot_col1, plot_col2, plot_col3, plot_col4 = st.columns(4)
 
 with plot_col1:
-    st.image(load_plot_image(0), caption="AE Classification", use_container_width=True)
-with plot_col2:
-    st.image(load_plot_image(1), caption="AE Detection", use_container_width=True)
-with plot_col3:
-    st.image(load_plot_image(2), caption="Temperature", use_container_width=True)
-with plot_col4:
-    st.image(load_plot_image(3), caption="YOLO Detection", use_container_width=True)
+    img, ts = load_plot_image(0)
+    st.caption(f"Last updated: {ts}")
+    st.image(img, caption="AE Classification", use_container_width=True)
 
+with plot_col2:
+    img, ts = load_plot_image(1)
+    st.caption(f"Last updated: {ts}")
+    st.image(img, caption="AE Detection", use_container_width=True)
+
+with plot_col3:
+    img, ts = load_plot_image(2)
+    st.caption(f"Last updated: {ts}")
+    st.image(img, caption="Temperature", use_container_width=True)
+
+with plot_col4:
+    img, ts = load_plot_image(3)
+    st.caption(f"Last updated: {ts}")
+    st.image(img, caption="YOLO Detection", use_container_width=True)
+
+# Auto-refresh (every 1 second to match backend saver)
 st.session_state.auto_refresh = st.checkbox("Auto-refresh status", st.session_state.auto_refresh)
 if st.session_state.auto_refresh:
-    time.sleep(5)
+    time.sleep(1)
     st.rerun()

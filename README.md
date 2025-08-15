@@ -68,4 +68,6 @@ creat a folder and open it in vscode, then open a bash terminal and run : git cl
 then run  : cd Novel-Cyber-Infrastructure-Enabling-AI-Driven-Analytics-and-Digital-Twins-for-Real-Time-3D-Printing/
 creat a virtual envirement: python -m venv venv (powrshell)
 activate: venv\Scripts\activate.bat (cmd)
-
+pip install -r requirements.txt
+press ctr+Shift+p then 'enter interpreter path" and insert the python.exe in the venv folder
+in cmd run: streamlit run inferece_deployement\stream1

@@ -5,7 +5,7 @@ import os
 host = "150.250.210.249"
 username = "pi"
 password = "1234"
-local_path = r"C:\Users\djeri\Downloads\spotwave_ae.py"  # Ensure this file is in the same folder as this script
+local_path = r"inferece_deployement\spotwave_ae.py"  # Ensure this file is in the same folder as this script
 remote_path = "/home/pi/spotwave_ae.py"
 
 def upload_file():

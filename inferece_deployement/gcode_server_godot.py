@@ -4,7 +4,7 @@ import os
 
 # Load shared session config
 try:
-    with open(r"C:\Users\djeri\OneDrive\Desktop\3dprinter_flask\test1\session_config.json", "r") as f:
+    with open(r"inferece_deployement\session_config.json", "r") as f:
         session = json.load(f)
 except FileNotFoundError:
     raise RuntimeError("Missing session_config.json. Please launch from stream1.py.")

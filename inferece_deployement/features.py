@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 # Load shared session config
 try:
-    with open(r"C:\Users\djeri\OneDrive\Desktop\3dprinter_flask\test1\session_config.json", "r") as f:
+    with open(r"inferece_deployement\session_config.json", "r") as f:
         session = json.load(f)
 except FileNotFoundError:
     raise RuntimeError("Missing session_config.json. Please launch from stream1.py.")
@@ -70,7 +70,7 @@ try:
         ax.set_ylim(0, max(max(bed_temps), max(tool_temps)) + 10)
 
         # Redraw the plot
-        plt.savefig(r"C:\Users\djeri\OneDrive\Desktop\3dprinter_flask\Database\static\plot3.png")  # Overwrite the same image every second
+        plt.savefig(r"database\static\plot3.png")  # Overwrite the same image every second
 
         # Wait for 1 second before the next update
         time.sleep(1)
