@@ -71,3 +71,6 @@ activate: venv\Scripts\activate.bat (cmd)
 pip install -r requirements.txt
 press ctr+Shift+p then 'enter interpreter path" and insert the python.exe in the venv folder
 in cmd run: streamlit run inferece_deployement\stream1
+
+run : taskkill /F /IM python.exe /T   (power shell)
+run :  taskkill /F /IM pythonw.exe /T       to kill python process
