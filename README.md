@@ -74,3 +74,6 @@ in cmd run: streamlit run inferece_deployement\stream1
 
 run : taskkill /F /IM python.exe /T   (power shell)
 run :  taskkill /F /IM pythonw.exe /T       to kill python process
+
+install GODOT_v4.3 : https://godotengine.org/download/archive/4.3-stable/   download .net version to use the C# sripts
+instal the .net sdk from: https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-9.0.304-windows-x64-installer
