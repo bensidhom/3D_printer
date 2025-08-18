@@ -600,3 +600,6 @@ Traceback (most recent call last):
   File "C:\3D_printer\Novel-Cyber-Infrastructure-Enabling-AI-Driven-Analytics-and-Digital-Twins-for-Real-Time-3D-Printing\venv\Lib\site-packages\PIL\Image.py", line 3580, in open
     raise UnidentifiedImageError(msg)
 PIL.UnidentifiedImageError: cannot identify image file 'database\\static\\plot3.png'
+2025-08-18 14:02:11,748 [INFO] Command 'start' sent. Status: 204
+2025-08-18 14:08:04,942 [INFO] Command 'pause' sent. Status: 204
+2025-08-18 14:08:40,960 [INFO] Command 'pause' sent. Status: 204
