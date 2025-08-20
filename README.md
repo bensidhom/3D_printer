@@ -62,18 +62,33 @@ Using XAMPP creat an apache secure web server and run a HTML file on that server
 
 # How to use it
 install vs-code : https://code.visualstudio.com/
+
+
 install python : https://www.python.org/downloads/   make sure to select "add to path"
 install git : https://git-scm.com/downloads/win
+
 creat a folder and open it in vscode, then open a bash terminal and run : git clone https://github.com/bensidhom/Novel-Cyber-Infrastructure-Enabling-AI-Driven-Analytics-and-Digital-Twins-for-Real-Time-3D-Printing.git
+
 then run  : cd Novel-Cyber-Infrastructure-Enabling-AI-Driven-Analytics-and-Digital-Twins-for-Real-Time-3D-Printing/
-creat a virtual envirement: python -m venv venv (powrshell)
-activate: venv\Scripts\activate.bat (cmd)
+creat a virtual envirement: python -m venv venv 
+
+activate: venv\Scripts\activate.bat 
+
 pip install -r requirements.txt
+
 press ctr+Shift+p then 'enter interpreter path" and insert the python.exe in the venv folder
+
 in cmd run: streamlit run inferece_deployement\stream1
 
+if the python scripts keep running in the background :
 run : taskkill /F /IM python.exe /T   (power shell)
+
 run :  taskkill /F /IM pythonw.exe /T       to kill python process
 
 install GODOT_v4.3 : https://godotengine.org/download/archive/4.3-stable/   download .net version to use the C# sripts
+
 instal the .net sdk from: https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-9.0.304-windows-x64-installer
+
+follow the tutorial to add openXR to godot and use the MetaQuest : https://docs.godotengine.org/en/stable/tutorials/xr/setting_up_xr.html
+ (install Android studio and open JDK 17)
+
